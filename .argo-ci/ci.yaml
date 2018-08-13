@@ -35,6 +35,12 @@ spec:
     - - name: build
         template: gradle-build
 
+      - name: docker
+        template: docker-build
+
+    - - name: integration-test
+        template: gradle-integration-test
+
   - name: gradle-test
     inputs:
       artifacts:
