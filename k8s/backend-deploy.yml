@@ -1,0 +1,15 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: backend
+        editor: vscode
+    spec:
+      containers:
+      - name: backend
+        image: mmorrison/backend:0.1.0
