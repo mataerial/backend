@@ -32,14 +32,14 @@ spec:
     - - name: test
         template: gradle-test
 
+      - name: integration-test
+        template: gradle-integration-test
+
     - - name: build
         template: gradle-build
 
-      - name: docker
+    - - name: build-docker-image
         template: docker-build
-
-    - - name: integration-test
-        template: gradle-integration-test
 
   - name: gradle-test
     inputs:
@@ -54,6 +54,10 @@ spec:
       command: [sh, -exc]
       args: [./gradlew --no-daemon test]
       workingDir: /src
+    outputs:
+      artifacts:
+      - name: test-report
+        path: /src/build/reports/tests/test
 
   - name: gradle-build
     inputs:
@@ -68,6 +72,12 @@ spec:
       command: [sh, -exc]
       args: [./gradlew --no-daemon build]
       workingDir: /src
+    outputs:
+      artifacts:
+      # generate hello-art artifact from /tmp/hello_world.txt
+      # artifacts can be directories as well as files
+      - name: jar-files
+        path: /src/build/libs
 
   - name: docker-build
     inputs:
@@ -80,7 +90,7 @@ spec:
     container:
       image: docker:17.10
       command: [sh, -c]
-      args: ["cd src && docker build --build-arg VERSION={{workflow.parameters.image-tag}} -t {{workflow.parameters.image-name}}:{{workflow.parameters.image-tag}} ."]
+      args: ["sleep 30 && cd src && docker build --build-arg VERSION={{workflow.parameters.image-tag}} -t {{workflow.parameters.image-name}}:{{workflow.parameters.image-tag}} ."]
       env:
       - name: DOCKER_HOST
         value: 127.0.0.1
