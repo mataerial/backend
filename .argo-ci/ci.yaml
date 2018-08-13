@@ -10,9 +10,9 @@ spec:
       value: master
     - name: repo
       value: https://github.com/mataerial/backend.git
-    - name: image_name
+    - name: image-name
       value: backend
-    - name: image_tag
+    - name: image-tag
       value: 0.1.0
 
   # a temporary volume, named workdir, will be used as a working directory
@@ -74,7 +74,7 @@ spec:
     container:
       image: docker:17.10
       command: [sh, -c]
-      args: ["cd src && docker build -t {{workflow.parameters.image_name}}:{{workflow.parameters.image_tag}} ."]
+      args: ["cd src && docker build -t {{workflow.parameters.image-name}}:{{workflow.parameters.image-tag}} ."]
       env:
       - name: DOCKER_HOST
         value: 127.0.0.1
