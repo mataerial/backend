@@ -80,7 +80,7 @@ spec:
     container:
       image: docker:17.10
       command: [sh, -c]
-      args: ["cd src && docker build -t {{workflow.parameters.image-name}}:{{workflow.parameters.image-tag}} ."]
+      args: ["cd src && docker build --build-arg VERSION={{workflow.parameters.image-tag}} -t {{workflow.parameters.image-name}}:{{workflow.parameters.image-tag}} ."]
       env:
       - name: DOCKER_HOST
         value: 127.0.0.1
