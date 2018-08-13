@@ -1,18 +1,33 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  generateName: argo-ci-
+  generateName: backend-pipeline-
 spec:
-  entrypoint: argo-ci
+  entrypoint: backend-pipeline
   arguments:
     parameters:
     - name: revision
       value: master
     - name: repo
       value: https://github.com/mataerial/backend.git
+    - name: image_name
+      value: backend
+    - name: image_tag
+      value: 0.1.0
+
+  # a temporary volume, named workdir, will be used as a working directory
+  # for this workflow. This volume is passed around from step to step.
+  # volumeClaimTemplates:
+  # - metadata:
+  #     name: workdir
+  #   spec:
+  #     accessModes: [ "ReadWriteOnce" ]
+  #     resources:
+  #       requests:
+  #         storage: 1Gi
 
   templates:
-  - name: argo-ci
+  - name: backend-pipeline
     steps:
     - - name: test
         template: gradle-test
@@ -46,4 +61,49 @@ spec:
       image: java:openjdk-8
       command: [sh, -exc]
       args: [./gradlew --no-daemon build]
+      workingDir: /src
+
+  - name: docker-build
+    inputs:
+      artifacts:
+      - name: code
+        path: /src
+        git:
+          repo: "{{workflow.parameters.repo}}"
+          revision: "{{workflow.parameters.revision}}"
+    container:
+      image: docker:17.10
+      command: [sh, -c]
+      args: ["cd src && docker build -t {{workflow.parameters.image_name}}:{{workflow.parameters.image_tag}} ."]
+      env:
+      - name: DOCKER_HOST
+        value: 127.0.0.1
+    sidecars:
+    - name: dind
+      image: docker:17.10-dind
+      securityContext:
+        privileged: true
+      # mirrorVolumeMounts will mount the same volumes specified in the main container
+      # to the sidecar (including artifacts), at the same mountPaths. This enables
+      # dind daemon to (partially) see the same filesystem as the main container in
+      # order to use features such as docker volume binding.
+      mirrorVolumeMounts: true
+
+  - name: gradle-integration-test
+    inputs:
+      artifacts:
+      - name: code
+        path: /src
+        git:
+          repo: "{{workflow.parameters.repo}}"
+          revision: "{{workflow.parameters.revision}}"
+    container:
+      image: appropriate/curl
+      command: [sh, -c]
+      args: ["until `curl -G 'http://127.0.0.1:8080/greeting' >& /tmp/out`; do echo sleep && sleep 1; done && cat /tmp/out"]
+    sidecars:
+    - name: runBackend
+      image: java:openjdk-8
+      command: [sh, -exc]
+      args: [./gradlew --no-daemon bootRun]
       workingDir: /src
